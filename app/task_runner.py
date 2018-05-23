@@ -1,8 +1,11 @@
-from multiprocessing import Pool
+from multiprocessing import Process
 import types
+import time
+import logging
+import signal
 
 from config import Config
-# from app import task_runner
+from app import task_runner
 
 
 class BaseTask(object):
@@ -35,25 +38,6 @@ class BaseTask(object):
         return 'Task %s' % self.name
 
 
-# class Consumer(object):
-#     def __init__(self):
-#         self.pool = Pool(Config.WORKERS)
-#         self.tasks_path = Config.TASKS_PATH
-#         self.app = task_runner
-#
-#     @staticmethod
-#     def get_function(name):
-#         task = task_runner.tasks.get(name)
-#         return task.run
-#
-#     def save_results_to_db(self):
-#         print 'task ends'
-#
-#     def apply_async(self, name):
-#         func = self.get_function(name)
-#         task_result = self.pool.apply_async(func, callback=self.save_results_to_db)
-
-
 class Producer(object):
     def __init__(self):
         self.tasks = {}
@@ -77,3 +61,5 @@ class TaskRunner(object):
             self._tasks[name] = task
             return task
         return func_wrapper
+
+

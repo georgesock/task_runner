@@ -3,7 +3,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Api
 
 from config import Config
-from app import BaseTask
 from app.task_runner import TaskRunner
 
 

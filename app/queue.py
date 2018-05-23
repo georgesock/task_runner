@@ -15,6 +15,10 @@ class TaskQueue(object):
     def append(self, name, params):
         Queue.append(name, params)
 
+    def popleft(self):
+        task = Queue.popleft()
+        return task
+
 
 if __name__ == '__main__':
     tq = TaskQueue()
