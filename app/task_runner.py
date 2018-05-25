@@ -5,7 +5,6 @@ import logging
 import signal
 
 from config import Config
-from app import task_runner
 
 
 class BaseTask(object):

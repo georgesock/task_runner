@@ -1,80 +1,92 @@
-from multiprocessing import Process
-import types
 import time
 import logging
 import signal
+from multiprocessing import Event as ProcessEvent
+from multiprocessing import Process
 
-from config import Config
-from app import task_runner
 from app.exceptions import QueueException
+from app import task_runner
 
+
+logging.basicConfig(level=logging.INFO)
 
 
 class Worker(object):
-    def __init__(self, app, default_delay, max_delay, backoff, utc):
-        self._logger = logging.getLogger('TaskRunner.consumer.Worker')
-        self.app = app
-        self.delay = default_delay
-        self.max_delay = max_delay
-
-    def popleft(self):
-        try:
-            task = self.app.queue.popleft()
-        except QueueException:
-            self._logger.info('Can not write to Queue')
-        else:
-            self._logger.info('Pop task', task)
-        return task
+    def __init__(self, task_runner, delay):
+        self._logger = logging.getLogger('Consumer.Worker')
+        self.delay = delay
+        self.task_runner = task_runner
 
     def loop(self):
         task = None
-        exception_raised = True
+        exception = True
         try:
-            task = self.app.queue.popleft()
+            # task = self.app.task_queue.pop()
+            task = True
+            self._logger.info('Try to get task')
         except QueueException:
-            self._logger.info('Queue Exception')
+            self._logger.info('Queue pop raised exception')
         except KeyboardInterrupt:
             raise
         except:
-            self._logger.info('Error')
+            self._logger.info('Unknown Error')
         else:
-            exception_raised = False
+            exception = False
 
         if task:
             self.process_task(task)
-        elif exception_raised:
-            self.sleep()
-
-    def sleep(self):
-        if self.delay > self.max_delay:
-            self.delay = self.max_delay
-        self._logger.info("No message, sleeping %s", self.delay)
-        time.sleep(self.delay)
+        elif exception:
+            self._logger.info('No messages in Task Queue')
+            time.sleep(self.delay)
 
     def process_task(self, task):
-        self._logger.info('Execution %s', task)
-        exception = None
-        task_value = None
-
         try:
-            if not isinstance(task, task_runner.BaseTask):
-                raise TypeError('Unknow object')
-            task_value = task.run()
-        except Exception:
-            self._logger.info("Some Error")
+            task_result = self.task_runer.execute(task)
+        except KeyboardInterrupt:
+            self._logger.info('Receiving exit signal')
+        except:
+            self._logger.info('Unhandled exception in working thread')
 
 
+class ProcessEnvironment(object):
+    def get_stop_flag(self):
+        return ProcessEvent()
+
+    def create_process(self, runnable, name):
+        p = Process(target=runnable, name=name)
+        p.daemon = True
+        return p
+
+    def is_alive(self, proc):
+        return proc.is_alive()
 
 
 class Consumer(object):
-    def __init__(self):
-        self.workers = Config.WORKERS
-        self.workers_threads = []
+    def __init__(self, task_runner, workers=1):
         self.consumer_timeout = 0.1
-        self.tasks_path = Config.TASKS_PATH
-        self.app = task_runner
-        self._logger = logging.getLogger('TaskRunner.consumer')
+        self.max_delay = 10.0
+        self._logger = logging.getLogger('Consumer')
+        self._logger.setLevel(logging.INFO)
+        self.environment = ProcessEnvironment()
+        self.task_runner = task_runner
+        self.workers_process = []
+        for i in range(workers):
+            worker = self._create_worker()
+            process = self._create_process(worker, 'Worker-%d' % (i+1))
+            self.workers_process.append((worker, process))
 
+    def _create_worker(self):
+        return Worker(self.task_runner, self.max_delay)
+
+    def _create_process(self, process, name):
+        def _run():
+            try:
+                process.loop()
+            except KeyboardInterrupt:
+                pass
+            except:
+                self._logger.exception('Process %s died', name)
+        return self.environment.create_process(_run, name)
 
     def start(self):
         self._logger.info('Starting Consumer')
@@ -82,8 +94,8 @@ class Consumer(object):
         if hasattr(signal, 'SIGHUP'):
             original_sighup_handler = signal.signal(signal.SIGHUP, signal.SIG_IGN)
 
-        for _, worker_process in self.worker_threads:
-            worker_process.start()
+        for _, worker in self.workers_process:
+            worker.start()
 
         signal.signal(signal.SIGINT, original_sigint_handler)
         if hasattr(signal, 'SIGHUP'):
@@ -93,8 +105,8 @@ class Consumer(object):
         if graceful:
             self._logger.info('Shutting down gracefully...')
             try:
-                for _, worker_process in self.workers_treads:
-                    worker_process.join()
+                for _, worker in self.workers_process:
+                    worker.join()
             except KeyboardInterrupt:
                 self._logger.info('Request for shutting down...')
             else:
@@ -105,27 +117,21 @@ class Consumer(object):
     def run(self):
         self.start()
         timeout = self.consumer_timeout
+        self._logger.info("Consumer started")
         while True:
             try:
                 time.sleep(timeout)
+                self._logger.info("Loop started")
             except KeyboardInterrupt:
+                self._logger.info("Keyboard Iterrupt")
                 self.stop()
             except:
                 self._logger.info('Error in Consumer')
                 self.stop()
 
-    @staticmethod
-    def get_function(name):
-        task = task_runner.tasks.get(name)
-        return task.run
 
-    def save_results_to_db(self):
-        print 'task ends'
-
-    def apply_async(self, name):
-        func = self.get_function(name)
-        task_result = self.pool.apply_async(func, callback=self.save_results_to_db)
 
 if __name__ == '__main__':
-    consumer = Consumer()
-    consumer.run()
+
+    c = Consumer(task_runner)
+    c.run()
