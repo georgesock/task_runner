@@ -42,7 +42,7 @@ class TaskRunner(object):
     def __init__(self, db_uri):
         self._tasks = {}
         self.db = DB(db_uri)
-        self.tasks_queue = TaskQueue()
+        self.tasks_queue = TaskQueue(db_uri)
 
     def register_task_type(self, name, task):
         self._tasks[name] = task

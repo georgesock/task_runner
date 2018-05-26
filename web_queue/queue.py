@@ -18,9 +18,8 @@ class TaskQueue(object):
         return (self.session.query(Queue)).count()
 
     def get_all(self):
-        query = self.session.query(Queue)
-        all = query.all()
-        return list(all)
+        all_tasks = self.session.query(Queue).all()
+        return all_tasks
 
     def append(self, name, params):
         q = Queue(name=name, params=params)
@@ -29,7 +28,7 @@ class TaskQueue(object):
         self.session.commit()
 
     def pop(self):
-        task = self.session.query.order_by(Queue.id).first()
+        task = self.session.query(Queue).order_by(Queue.id).first()
         self.session.delete(task)
         self.session.commit()
         return task

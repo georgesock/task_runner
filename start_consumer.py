@@ -7,14 +7,18 @@ from app.consumer import Consumer
 
 
 def load_app(app_path):
-    if os.path.isfile(app_path):
-        __import__(app_path)
-        mod = sys.modules[app_path]
-        for o in mod:
-            if isinstance(o, TaskRunner):
-                return o
-            else:
-                raise ImportError()
+
+    # if os.path.isfile(app_path):
+    #     mod_path = app_path.rst
+    __import__(app_path)
+    mod = sys.modules[app_path]
+    from pprint import pprint
+    pprint(mod)
+    for o in mod.__dict__:
+        if isinstance(mod.__dict__[o], TaskRunner):
+            return mod.__dict__[o]
+    else:
+        raise ImportError()
 
 
 if __name__ == '__main__':

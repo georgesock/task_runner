@@ -10,6 +10,7 @@ app = Flask(__name__)
 app.config.from_object(Config)
 db = SQLAlchemy(app)
 db.Model = Base
+db.create_all()
 api = Api(app)
 
 

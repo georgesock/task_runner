@@ -1,6 +1,7 @@
 import logging
 import signal
 import time
+import sys, traceback
 from multiprocessing import Event as ProcessEvent
 from multiprocessing import Process
 
@@ -15,19 +16,22 @@ class Worker(object):
         self._logger = logging.getLogger('Consumer.Worker')
         self.delay = delay
         self.task_runner = task_runner
+        self.tasks = self.task_runner.tasks
 
     def loop(self):
         task = None
         exception = True
         try:
-            task = self.task_runner.task_queue.pop()
             self._logger.info('Try to get task')
+            queued_task = self.task_runner.tasks_queue.pop()
+            task = self.tasks.get(queued_task.name)
         except QueueException:
             self._logger.info('Queue pop raised exception')
         except KeyboardInterrupt:
             raise
         except:
             self._logger.info('Unknown Error')
+            traceback.print_exc(file=sys.stdout)
         else:
             exception = False
         if task:
@@ -38,11 +42,14 @@ class Worker(object):
 
     def process_task(self, task):
         try:
-            task_result = self.task_runer.execute(task)
+            # task_result = self.task_runner.execute(task)
+            task_result = task.run()
+            print task_result
         except KeyboardInterrupt:
             self._logger.info('Receiving exit signal')
         except:
             self._logger.info('Unhandled exception in working thread')
+            traceback.print_exc(file=sys.stdout)
 
 
 class ProcessEnvironment(object):
@@ -59,13 +66,13 @@ class ProcessEnvironment(object):
 
 
 class Consumer(object):
-    def __init__(self, task_runner, workers=1):
+    def __init__(self, app, workers=1):
         self.consumer_timeout = 0.1
-        self.max_delay = 10.0
+        self.max_delay = 2.0
         self._logger = logging.getLogger('Consumer')
         self._logger.setLevel(logging.INFO)
         self.environment = ProcessEnvironment()
-        self.task_runner = task_runner
+        self.app = app
         self.workers_process = []
         for i in range(workers):
             worker = self._create_worker()
@@ -73,12 +80,13 @@ class Consumer(object):
             self.workers_process.append((worker, process))
 
     def _create_worker(self):
-        return Worker(self.task_runner, self.max_delay)
+        return Worker(self.app, self.max_delay)
 
     def _create_process(self, process, name):
         def _run():
             try:
-                process.loop()
+                while True:
+                    process.loop()
             except KeyboardInterrupt:
                 pass
             except:
@@ -118,10 +126,10 @@ class Consumer(object):
         while True:
             try:
                 time.sleep(timeout)
-                self._logger.info("Loop started")
+                # self._logger.info("Loop started")
             except KeyboardInterrupt:
                 self._logger.info("Keyboard Iterrupt")
-                self.stop()
+                self.stop(graceful=True)
             except:
                 self._logger.info('Error in Consumer')
                 self.stop()
