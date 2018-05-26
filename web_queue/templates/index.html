@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Web Queue of TaskRunner App</title>
+</head>
+<body>
+    <ul>
+        {% for task in task_queue %}
+        <li>{{ task }}</li>
+        {% endfor %}
+    </ul>
+
+</body>
+</html>

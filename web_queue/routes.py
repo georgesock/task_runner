@@ -1,7 +1,16 @@
 from flask_restful import Resource, reqparse
+from flask import render_template
 
-from app import app, db, api
-from app.queue import TaskQueue
+from web_queue import api, app, db
+from web_queue.queue import TaskQueue
+from config import Config
+
+
+@app.route('/')
+def index():
+    tq = TaskQueue(Config.SQLALCHEMY_DATABASE_URI)
+    tq.get_all()
+    return render_template('index.html', task_queue=tq)
 
 
 class TaskAPI(Resource):

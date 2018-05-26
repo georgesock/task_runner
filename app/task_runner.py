@@ -1,10 +1,6 @@
-from multiprocessing import Process
 import types
-import time
-import logging
-import signal
-
-from config import Config
+from web_queue.models import DB
+from web_queue.queue import TaskQueue
 
 
 class BaseTask(object):
@@ -43,8 +39,10 @@ class Producer(object):
 
 
 class TaskRunner(object):
-    def __init__(self):
+    def __init__(self, db_uri):
         self._tasks = {}
+        self.db = DB(db_uri)
+        self.tasks_queue = TaskQueue()
 
     def register_task_type(self, name, task):
         self._tasks[name] = task
@@ -60,5 +58,6 @@ class TaskRunner(object):
             self._tasks[name] = task
             return task
         return func_wrapper
+
 
 

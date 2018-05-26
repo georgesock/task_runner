@@ -1,12 +1,11 @@
-import time
 import logging
 import signal
+import time
 from multiprocessing import Event as ProcessEvent
 from multiprocessing import Process
 
-from app.exceptions import QueueException
+from app_exceptions import QueueException
 from app import task_runner
-
 
 logging.basicConfig(level=logging.INFO)
 
@@ -21,8 +20,7 @@ class Worker(object):
         task = None
         exception = True
         try:
-            # task = self.app.task_queue.pop()
-            task = True
+            task = self.task_runner.task_queue.pop()
             self._logger.info('Try to get task')
         except QueueException:
             self._logger.info('Queue pop raised exception')
@@ -32,7 +30,6 @@ class Worker(object):
             self._logger.info('Unknown Error')
         else:
             exception = False
-
         if task:
             self.process_task(task)
         elif exception:

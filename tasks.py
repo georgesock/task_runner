@@ -1,6 +1,8 @@
 from app.task_runner import TaskRunner, BaseTask
+from config import Config
 
-app = TaskRunner()
+print Config.SQLALCHEMY_DATABASE_URI
+app = TaskRunner(Config.SQLALCHEMY_DATABASE_URI)
 
 
 @app.task(name='test1')
@@ -24,10 +26,10 @@ class LoopTask(BaseTask):
         while True:
             pass
 
-if __name__ == '__main__':
-    print app._tasks
-    print app._tasks['test1'].run
-    print app._tasks['test1'].run()
+# if __name__ == '__main__':
+    # print app._tasks
+    # print app._tasks['test1'].run
+    # print app._tasks['test1'].run()
 
     # print tasks.producer.tasks
     # t = tasks.long_long()
