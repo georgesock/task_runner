@@ -16,12 +16,19 @@ def index():
     return render_template('index.html', task_queue=tasks)
 
 
-@app.route('/api/v1/task', methods=['GET'])
+@app.route('/api/v1/tasks', methods=['GET'])
 def get_tasks():
     task_queue = TaskQueue(Config.SQLALCHEMY_DATABASE_URI)
     tasks = task_queue.get_all()
     tasks_names = list([(task.name, task.worker) for task in tasks])
     json_response = jsonify({"tasks": tasks_names})
+    return json_response
+
+@app.route('/api/v1/tasks', methods=['DELETE'])
+def delete_tasks():
+    task_queue = TaskQueue(Config.SQLALCHEMY_DATABASE_URI)
+    tasks = task_queue.delete_all()
+    json_response = jsonify({"status": 'OK'})
     return json_response
 
 

@@ -38,8 +38,6 @@ class TaskQueue(object):
             return task
 
     def peek(self, worker_id):
-        # task = self.session.query(Queue).order_by(Queue.id).first()
-        # self.session.execute(self.db.lock_db_sql())
         task = self.session.query(Queue).filter(Queue.worker == None).order_by(Queue.id).with_for_update().first()
         if task:
             self._logger.info("Get free task %s", task)
@@ -58,7 +56,10 @@ class TaskQueue(object):
         self.session.flush()
         self.session.commit()
 
-
+    def delete_all(self):
+        task = self.session.query(Queue).delete()
+        self.session.flush()
+        self.session.commit()
 
 
 if __name__ == '__main__':

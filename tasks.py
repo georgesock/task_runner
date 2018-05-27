@@ -6,52 +6,39 @@ from config import Config
 app = TaskRunner(Config.SQLALCHEMY_DATABASE_URI)
 
 
-@app.task(name='test1')
-def long_long(params=None):
-    # for i in xrange(2):
-    #     print 2**i
+@app.task(name='m_sleep')
+def middle_sleep(self=None):
+    print 'Middle sleep 30s'
     time.sleep(30)
     return 'Hello1'
 
 
-@app.task(name='test2')
-def long_long2(params=None):
-    # for i in xrange(100): print 2**i
+@app.task(name='l_sleep')
+def long_sleep(self=None):
+    print 'Long sleep 60s'
     time.sleep(60)
     return 'Hello2'
 
-@app.task(name='loop')
-def long_long(params=None):
+@app.task(name='inf_loop')
+def infinete_loop(self=None):
     while True:
         pass
-    return 'Hello'
+
+if __name__ == '__main__':
+
+    from pprint import pprint
+
+    print dir(app.tasks['l_sleep'])
+    print type(app.tasks['l_sleep'])
+    print app.tasks['l_sleep'].run
+    app.tasks['l_sleep'].delay()
+    #
+    # print dir(app.tasks['l_sleep']._app)
+    # print type(app.tasks['l_sleep']._app)
+    # app.tasks['l_sleep'].delay()
 
 
-class LoopTask(BaseTask):
-    def __init__(self, name, params):
-        BaseTask.__init__(self, name, params)
-
-    def run(self):
-        while True:
-            pass
-
-# if __name__ == '__main__':
-    # print app._tasks
-    # print app._tasks['test1'].run
-    # print app._tasks['test1'].run()
-
-    # print tasks.producer.tasks
-    # t = tasks.long_long()
-    # print t.name
-
-    # print tasks.producer.modules
-    # print dir(t)
-    # print t.run()
-
-    # t2 = LoopTask('loop', None)
-    # app.register_task_type('loop', t2)
-    # print app._tasks['loop'].run
-
-
+    # task2 = middle_sleep()
+    # middle_sleep.delay()
 
 
