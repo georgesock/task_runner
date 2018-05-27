@@ -73,7 +73,6 @@ class Consumer(object):
         self.max_delay = 10
         self._logger = logging.getLogger('Consumer')
         self._logger.setLevel(logging.INFO)
-        self.environment = ProcessEnvironment()
         self.app = app
         self.workers_process = []
         for i in range(workers):
