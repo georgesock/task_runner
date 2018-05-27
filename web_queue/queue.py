@@ -1,3 +1,5 @@
+import logging
+
 from web_queue.models import Queue, DB
 
 
@@ -5,6 +7,7 @@ class TaskQueue(object):
     def __init__(self, db_uri):
         self.db = DB(db_uri)
         self.session = self.db.get_session()
+        self._logger = logging.getLogger('TaskQueue Instance')
 
     def __len__(self):
         return Queue.count()
@@ -29,9 +32,33 @@ class TaskQueue(object):
 
     def pop(self):
         task = self.session.query(Queue).order_by(Queue.id).first()
+        if task:
+            self.session.delete(task)
+            self.session.commit()
+            return task
+
+    def peek(self, worker_id):
+        # task = self.session.query(Queue).order_by(Queue.id).first()
+        # self.session.execute(self.db.lock_db_sql())
+        task = self.session.query(Queue).filter(Queue.worker == None).order_by(Queue.id).with_for_update().first()
+        if task:
+            self._logger.info("Get free task %s", task)
+            task.worker = worker_id
+            try:
+                self._logger.info("Mark for worker %s", worker_id)
+                self.session.add(task)
+                self.session.commit()
+            except:
+                self.session.rollback()
+            return task
+
+    def delete(self, id):
+        task = self.session.query(Queue).get(id)
         self.session.delete(task)
+        self.session.flush()
         self.session.commit()
-        return task
+
+
 
 
 if __name__ == '__main__':

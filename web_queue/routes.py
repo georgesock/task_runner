@@ -20,7 +20,7 @@ def index():
 def get_tasks():
     task_queue = TaskQueue(Config.SQLALCHEMY_DATABASE_URI)
     tasks = task_queue.get_all()
-    tasks_names = list([task.name for task in tasks])
+    tasks_names = list([(task.name, task.worker) for task in tasks])
     json_response = jsonify({"tasks": tasks_names})
     return json_response
 

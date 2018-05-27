@@ -7,26 +7,31 @@ from multiprocessing import Process
 
 from app_exceptions import QueueException
 from app import task_runner
+from web_queue.queue import TaskQueue
+from config import Config
 
 logging.basicConfig(level=logging.INFO)
 
 
 class Worker(object):
-    def __init__(self, task_runner, delay):
-        self._logger = logging.getLogger('Consumer.Worker')
+    def __init__(self, task_runner, worker_id, delay):
+        logger = 'Consumer.%s' % worker_id
+        self._logger = logging.getLogger(logger)
         self.delay = delay
         self.task_runner = task_runner
+        self.task_queue = TaskQueue(Config.SQLALCHEMY_DATABASE_URI)
         self.tasks = self.task_runner.tasks
+        self.worker_id = worker_id
 
     def loop(self):
         task = None
         exception = True
+        queued_task = None
         try:
-            self._logger.info('Try to get task')
-            queued_task = self.task_runner.tasks_queue.pop()
-            task = self.tasks.get(queued_task.name)
-        except QueueException:
-            self._logger.info('Queue pop raised exception')
+            queued_task = self.task_queue.peek(worker_id=self.worker_id)
+            if queued_task:
+                self._logger.info('Trying to get task from TaskRunner %s', queued_task.name)
+                task = self.tasks.get(queued_task.name)
         except KeyboardInterrupt:
             raise
         except:
@@ -35,15 +40,16 @@ class Worker(object):
         else:
             exception = False
         if task:
-            self.process_task(task)
-        elif exception:
-            self._logger.info('No messages in Task Queue')
+            self.process_task(task, queued_task.id)
+        else:
+            self._logger.info('No messages in Task Queue, It is sleep time for %d s', self.delay)
             time.sleep(self.delay)
 
-    def process_task(self, task):
+    def process_task(self, task, task_id):
         try:
-            # task_result = self.task_runner.execute(task)
+            self._logger.info('Processing Task')
             task_result = task.run()
+            self.task_queue.delete(task_id)
             print task_result
         except KeyboardInterrupt:
             self._logger.info('Receiving exit signal')
@@ -56,11 +62,6 @@ class ProcessEnvironment(object):
     def get_stop_flag(self):
         return ProcessEvent()
 
-    def create_process(self, runnable, name):
-        p = Process(target=runnable, name=name)
-        p.daemon = True
-        return p
-
     def is_alive(self, proc):
         return proc.is_alive()
 
@@ -68,19 +69,20 @@ class ProcessEnvironment(object):
 class Consumer(object):
     def __init__(self, app, workers=1):
         self.consumer_timeout = 0.1
-        self.max_delay = 2.0
+        self.max_delay = 10
         self._logger = logging.getLogger('Consumer')
         self._logger.setLevel(logging.INFO)
         self.environment = ProcessEnvironment()
         self.app = app
         self.workers_process = []
         for i in range(workers):
-            worker = self._create_worker()
-            process = self._create_process(worker, 'Worker-%d' % (i+1))
+            worker_id = 'Worker-%d' % (i+1)
+            worker = self._create_worker(worker_id)
+            process = self._create_process(worker, worker_id)
             self.workers_process.append((worker, process))
 
-    def _create_worker(self):
-        return Worker(self.app, self.max_delay)
+    def _create_worker(self, worker_id):
+        return Worker(self.app, worker_id, self.max_delay)
 
     def _create_process(self, process, name):
         def _run():
@@ -91,7 +93,9 @@ class Consumer(object):
                 pass
             except:
                 self._logger.exception('Process %s died', name)
-        return self.environment.create_process(_run, name)
+        p = Process(target=_run, name=name)
+        p.daemon = True
+        return p
 
     def start(self):
         self._logger.info('Starting Consumer')
@@ -134,9 +138,3 @@ class Consumer(object):
                 self._logger.info('Error in Consumer')
                 self.stop()
 
-
-
-if __name__ == '__main__':
-
-    c = Consumer(task_runner)
-    c.run()

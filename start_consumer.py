@@ -7,9 +7,6 @@ from app.consumer import Consumer
 
 
 def load_app(app_path):
-
-    # if os.path.isfile(app_path):
-    #     mod_path = app_path.rst
     __import__(app_path)
     mod = sys.modules[app_path]
     from pprint import pprint
@@ -26,7 +23,7 @@ if __name__ == '__main__':
     parser.add_argument('-A', '-app', help='TaskRunner Application path', default='tasks')
     app_path = parser.parse_args()
     app = load_app(app_path.A)
-    consumer = Consumer(app)
+    consumer = Consumer(app, 2)
     consumer.run()
 
 

@@ -1,7 +1,8 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy import Column, String, Integer
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.pool import NullPool
 
 from web_queue.utils import singleton
 
@@ -14,6 +15,7 @@ class Queue(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(100), index=True)
     params = Column(String(1000))
+    worker = Column(String(10))
 
     def __repr__(self):
         return 'Task %s' % (self.name)
@@ -26,6 +28,13 @@ class DB(object):
         self.engine = create_engine(db_uri)
 
     def get_session(self):
-        Session = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
-        return Session()
+        session_factory = sessionmaker(autocommit=False, autoflush=True, bind=self.engine)
+        session = scoped_session(session_factory)
+        return session()
+
+    @staticmethod
+    def lock_db_sql():
+        sql = 'BEGIN EXCLUSIVE;'
+        return sql
+
 
