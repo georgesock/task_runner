@@ -10,6 +10,13 @@ from config import Config
 
 class BaseTask(object):
     def __init__(self, name, app, params=None, json_schema=None):
+        """
+        Basic element of task runner application
+        :param name: name of the task, which maps to function
+        :param app: task_runner application instance
+        :param params:
+        :param json_schema:
+        """
         self._name = name
         self._params = params
         self._app = app
@@ -49,6 +56,12 @@ class Producer(object):
         self.request.add_header('Content-Type', 'application/json')
 
     def delay(self, task_name, task_params=None):
+        """
+        Send Rest request to queueing task
+        :param task_name:
+        :param task_params:
+        :return:
+        """
         data = {
             "name": task_name,
             "params": task_params,
@@ -60,6 +73,11 @@ class Producer(object):
 
 class TaskRunner(object):
     def __init__(self, db_uri, web_queue_url=Config.WEB_QUEUE_URL):
+        """
+        Main application contains all available tasks
+        :param db_uri: database uri
+        :param web_queue_url: url where is located web_queue service to queueing tasks via rest
+        """
         self._tasks = {}
         self.db = DB(db_uri)
         self.tasks_queue = TaskQueue(db_uri)
@@ -75,6 +93,14 @@ class TaskRunner(object):
 
 
     def task(self, name, params=None):
+        """
+        Decorator, which marks functions as tasks for task_runner application.
+        It creates task instace, than bounds function with task method run and register it in
+        task_runner instance
+        :param name:
+        :param params:
+        :return:
+        """
         def func_wrapper(func):
             task = BaseTask(name=name, app=self, params=params)
             task.run = types.MethodType(func, task, BaseTask)
