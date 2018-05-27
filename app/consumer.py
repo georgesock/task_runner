@@ -5,8 +5,6 @@ import sys, traceback
 from multiprocessing import Event as ProcessEvent
 from multiprocessing import Process
 
-from app_exceptions import QueueException
-from app import task_runner
 from web_queue.queue import TaskQueue
 from config import Config
 

@@ -1,6 +1,6 @@
 import time
 
-from app.task_runner import TaskRunner, BaseTask
+from app.task_runner import TaskRunner
 from config import Config
 
 app = TaskRunner(Config.SQLALCHEMY_DATABASE_URI)
@@ -26,19 +26,7 @@ def infinete_loop(self=None):
 
 if __name__ == '__main__':
 
-    from pprint import pprint
-
-    print dir(app.tasks['l_sleep'])
-    print type(app.tasks['l_sleep'])
-    print app.tasks['l_sleep'].run
     app.tasks['l_sleep'].delay()
-    #
-    # print dir(app.tasks['l_sleep']._app)
-    # print type(app.tasks['l_sleep']._app)
-    # app.tasks['l_sleep'].delay()
-
-
-    # task2 = middle_sleep()
-    # middle_sleep.delay()
+    app.tasks['m_sleep'].delay()
 
 

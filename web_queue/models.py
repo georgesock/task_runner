@@ -21,6 +21,14 @@ class Queue(Base):
         return 'Task %s' % (self.name)
 
 
+class Results(Base):
+    __tablename__ = 'results'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), index=True)
+    status = Column(String(1000))
+
+
+
 @singleton
 class DB(object):
 

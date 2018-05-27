@@ -1,11 +1,7 @@
-import json
-from flask_restful import Resource, reqparse
-from flask import render_template, Response, request, abort, jsonify
-from jsonschema import validate
+from flask import render_template, request, abort, jsonify
 
-from web_queue import api, app
+from web_queue import app
 from web_queue.queue import TaskQueue
-from web_queue.utils import json_validation, to_json
 from config import Config
 
 
@@ -23,6 +19,7 @@ def get_tasks():
     tasks_names = list([(task.name, task.worker) for task in tasks])
     json_response = jsonify({"tasks": tasks_names})
     return json_response
+
 
 @app.route('/api/v1/tasks', methods=['DELETE'])
 def delete_tasks():
@@ -59,23 +56,3 @@ def page_not_found(e):
 def page_not_found(e):
     return jsonify(405, {})
 
-
-
-# class TaskAPI(Resource):
-#     def __init__(self):
-#         self.task_queue = TaskQueue(Config.SQLALCHEMY_DATABASE_URI)
-#         self.reqparse = reqparse.RequestParser()
-#         self.reqparse.add_argument('name', type=str, required=True, location='json')
-#         self.reqparse.add_argument('params', type=str, required=True, location='json')
-#         super(TaskAPI, self).__init__()
-#
-#     def post(self):
-#         args = self.reqparse.parse_args()
-#         task = {
-#             'name': args['name'],
-#             'params': args['params']
-#         }
-#         self.task_queue.append()
-#
-#
-# api.add_resource(TaskAPI, '/task-runner/api/', endpoint='task')

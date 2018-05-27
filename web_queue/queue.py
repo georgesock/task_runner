@@ -26,7 +26,6 @@ class TaskQueue(object):
 
     def append(self, name, params):
         q = Queue(name=name, params=params)
-
         self.session.add(q)
         self.session.commit()
 
