@@ -73,21 +73,6 @@ class TaskRunner(object):
     def tasks(self):
         return self._tasks
 
-    # def task(self, name, json_schema=None):
-    #     def func_wrapper(func):
-    #         task = BaseTask(name=name, json_schema=json_schema, app=self)
-    #         task.run = types.MethodType(func, task)
-    #         self._tasks[name] = task
-    #         return func
-    #     return func_wrapper
-
-    # def task(self, name, json_schema=None):
-    #     def func_wrapper(func):
-    #         task = BaseTask(name, json_schema, self)
-    #         task.run = types.MethodType(func, task)
-    #         self._tasks[name] = task
-    #         return task
-    #     return func_wrapper
 
     def task(self, name, params=None):
         def func_wrapper(func):
@@ -96,20 +81,3 @@ class TaskRunner(object):
             self._tasks[name] = task
             return task
         return func_wrapper
-
-
-# class task(object):
-#     def __init__(self, name, app, json_schema=None):
-#         self.name = name
-#         self.json_schema = json_schema
-#         self.app = app
-#
-#     def __call__(self, func, *args, **kwargs):
-#         task = BaseTask(name=self.name, app=self.app, json_schema=self.json_schema)
-#         task.run = types.MethodType(func, task)
-#         self.app._tasks[self.name] = task
-#         def wrapped_func(*args, **kwargs):
-#             return func(*args, **kwargs)
-#         return wrapped_func
-
-
