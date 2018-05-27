@@ -5,7 +5,7 @@ import sys, traceback
 from multiprocessing import Event as ProcessEvent
 from multiprocessing import Process
 
-from web_queue.queue import TaskQueue
+from web_queue.queue import TaskQueue, TaskResults
 from config import Config
 
 logging.basicConfig(level=logging.INFO)
@@ -23,7 +23,8 @@ class Worker(object):
         self._logger = logging.getLogger(logger)
         self.delay = delay
         self.task_runner = task_runner
-        self.task_queue = TaskQueue(Config.SQLALCHEMY_DATABASE_URI)
+        self.task_queue = TaskQueue()
+        self.task_results = TaskResults()
         self.tasks = self.task_runner.tasks
         self.worker_id = worker_id
 
@@ -50,16 +51,28 @@ class Worker(object):
             time.sleep(self.delay)
 
     def process_task(self, task, task_id):
+        status = 'BAD'
+        exception = True
         try:
             self._logger.info('Processing Task')
             task_result = task.run()
             self.task_queue.delete(task_id)
-            print task_result
+            exception = False
         except KeyboardInterrupt:
             self._logger.info('Receiving exit signal')
         except:
             self._logger.info('Unhandled exception in working thread')
             traceback.print_exc(file=sys.stdout)
+        if exception:
+            self.task_results.save_result(task.name, status)
+            self._logger.info('Save bad task result')
+            self.task_queue.delete(task_id)
+            self._logger.info('Remove bad task from queue')
+        else:
+            status = 'OK'
+            self.task_results.save_result(task.name, status, task_result)
+            self._logger.info('Save good task result')
+
 
 
 class Consumer(object):

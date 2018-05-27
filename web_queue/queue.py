@@ -1,10 +1,11 @@
 import logging
 
-from web_queue.models import Queue, DB
+from web_queue.models import Queue, Results, DB
+from config import Config
 
 
 class TaskQueue(object):
-    def __init__(self, db_uri):
+    def __init__(self, db_uri=Config.SQLALCHEMY_DATABASE_URI):
         self.db = DB(db_uri)
         self.session = self.db.get_session()
         self._logger = logging.getLogger('TaskQueue Instance')
@@ -50,6 +51,7 @@ class TaskQueue(object):
             return task
 
     def delete(self, id):
+
         task = self.session.query(Queue).get(id)
         self.session.delete(task)
         self.session.flush()
@@ -61,10 +63,20 @@ class TaskQueue(object):
         self.session.commit()
 
 
-if __name__ == '__main__':
-    from config import Config
-    tq = TaskQueue(Config.SQLALCHEMY_DATABASE_URI)
-    r = tq.get_all()
-    print r
+class TaskResults(object):
+    def __init__(self, db_uri=Config.SQLALCHEMY_DATABASE_URI):
+        self.db = DB(db_uri)
+        self.session = self.db.get_session()
+        self._logger = logging.getLogger('TaskResults Instance')
+
+    def save_result(self, task_name, status, result=None):
+        result = Results(name=task_name, status=status, result=result)
+        self.session.add(result)
+        self.session.commit()
+
+    def get_all(self):
+        results = self.session.query(Results).all()
+        return results
+
 
 

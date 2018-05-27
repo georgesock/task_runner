@@ -25,7 +25,8 @@ class Results(Base):
     __tablename__ = 'results'
     id = Column(Integer, primary_key=True)
     name = Column(String(100), index=True)
-    status = Column(String(1000))
+    status = Column(String(10))
+    result = Column(String(1000))
 
 
 
@@ -33,7 +34,7 @@ class Results(Base):
 class DB(object):
 
     def __init__(self, db_uri):
-        self.engine = create_engine(db_uri)
+        self.engine = create_engine(db_uri, pool_size=20, max_overflow=0)
 
     def get_session(self):
         session_factory = sessionmaker(autocommit=False, autoflush=True, bind=self.engine)

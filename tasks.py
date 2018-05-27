@@ -24,6 +24,7 @@ def infinete_loop(self=None):
     while True:
         pass
 
+
 if __name__ == '__main__':
 
     app.tasks['l_sleep'].delay()

@@ -1,7 +1,7 @@
 from flask import render_template, request, abort, jsonify
 
 from web_queue import app
-from web_queue.queue import TaskQueue
+from web_queue.queue import TaskQueue, TaskResults
 from config import Config
 
 
@@ -11,9 +11,12 @@ def index():
     Main page of the web_queue application
     :return:
     """
-    task_queue = TaskQueue(Config.SQLALCHEMY_DATABASE_URI)
+    task_queue = TaskQueue()
+    task_results = TaskResults()
     tasks = task_queue.get_all()
-    return render_template('index.html', task_queue=tasks)
+    results = task_results.get_all()
+    data = dict(tasks=tasks, results=results)
+    return render_template('index.html', data=data)
 
 
 @app.route('/api/v1/tasks', methods=['GET'])
@@ -22,7 +25,7 @@ def get_tasks():
     Rest method, which gets all task from task_queue
     :return:
     """
-    task_queue = TaskQueue(Config.SQLALCHEMY_DATABASE_URI)
+    task_queue = TaskQueue()
     tasks = task_queue.get_all()
     tasks_names = list([(task.name, task.worker) for task in tasks])
     json_response = jsonify({"tasks": tasks_names})
