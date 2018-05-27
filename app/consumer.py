@@ -115,7 +115,7 @@ class Consumer(object):
             self._logger.info('Shutting down gracefully...')
             try:
                 for _, worker in self.workers_process:
-                    worker.join()
+                    worker.join(10)
             except KeyboardInterrupt:
                 self._logger.info('Request for shutting down...')
             else:
