@@ -7,6 +7,10 @@ from config import Config
 
 @app.route('/')
 def index():
+    """
+    Main page of the web_queue application
+    :return:
+    """
     task_queue = TaskQueue(Config.SQLALCHEMY_DATABASE_URI)
     tasks = task_queue.get_all()
     return render_template('index.html', task_queue=tasks)
@@ -14,6 +18,10 @@ def index():
 
 @app.route('/api/v1/tasks', methods=['GET'])
 def get_tasks():
+    """
+    Rest method, which gets all task from task_queue
+    :return:
+    """
     task_queue = TaskQueue(Config.SQLALCHEMY_DATABASE_URI)
     tasks = task_queue.get_all()
     tasks_names = list([(task.name, task.worker) for task in tasks])
@@ -23,6 +31,10 @@ def get_tasks():
 
 @app.route('/api/v1/tasks', methods=['DELETE'])
 def delete_tasks():
+    """
+    Rest method, which deletes all task from task_queue
+    :return:
+    """
     task_queue = TaskQueue(Config.SQLALCHEMY_DATABASE_URI)
     tasks = task_queue.delete_all()
     json_response = jsonify({"status": 'OK'})
@@ -31,6 +43,10 @@ def delete_tasks():
 
 @app.route('/api/v1/task', methods=['POST'])
 def post_task():
+    """
+    Rest method to add task to task_queue
+    :return:
+    """
     print request.json
     if not request.json:
         abort(404)

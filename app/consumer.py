@@ -13,6 +13,12 @@ logging.basicConfig(level=logging.INFO)
 
 class Worker(object):
     def __init__(self, task_runner, worker_id, delay):
+        """
+        Worker object run tasks. If task_queue is empty, worker sleep
+        :param task_runner: task_runner application with tasks
+        :param worker_id: id of current worker
+        :param delay: how long worker should sleep
+        """
         logger = 'Consumer.%s' % worker_id
         self._logger = logging.getLogger(logger)
         self.delay = delay
@@ -56,16 +62,13 @@ class Worker(object):
             traceback.print_exc(file=sys.stdout)
 
 
-class ProcessEnvironment(object):
-    def get_stop_flag(self):
-        return ProcessEvent()
-
-    def is_alive(self, proc):
-        return proc.is_alive()
-
-
 class Consumer(object):
     def __init__(self, app, workers=1):
+        """
+        Consumer creates worker process and starts them in the loop.
+        :param app: task_runner instance application, with all available tasks
+        :param workers: the number of worker to start
+        """
         self.consumer_timeout = 0.1
         self.max_delay = 10
         self._logger = logging.getLogger('Consumer')
@@ -122,6 +125,10 @@ class Consumer(object):
             self._logger.info('Shutting down...')
 
     def run(self):
+        """
+        run method start up Consumer
+        :return:
+        """
         self.start()
         timeout = self.consumer_timeout
         self._logger.info("Consumer started")
